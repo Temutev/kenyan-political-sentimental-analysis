@@ -49,16 +49,12 @@ import plotly.express as px
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #sentiment_analysis = pipeline(model="finiteautomata/bertweet-base-sentiment-analysis")
-def remove_pattern(text,pattern):
-    
-    # re.findall() finds the pattern i.e @user and puts it in a list for further task
-    r = re.findall(pattern,text)
-    
-    # re.sub() removes @user from the sentences in the dataset
-    for i in r:
-        text = re.sub(i,"",text)
-    
-    return text
+def remove_pattern(text, pattern):
+    if isinstance(text, str):
+        return re.sub(pattern, '', text)
+    else:
+        return text
+
 
 #function to extract hashtags
 def Hashtags_Extract(x):
@@ -112,13 +108,13 @@ def data_analysis_page():
 
     # Load CSV files directly into a DataFrame
     #folder_path = '/home/tevin/Desktop/Tems/twitter/data/'
-    file_path = 'processed_tweets.csv'
+    file_path = 'combined_data.csv'
     combined_df = pd.read_csv(file_path)
 
-    combined_df = combined_df[['full_text', 'reply_count', 'retweet_count', 'favorite_count', 'url', 'created_at', 'sentiment']]
-    combined_df['created_at'] = pd.to_datetime(combined_df['created_at'])
+    #combined_df = combined_df[['full_text', 'reply_count', 'retweet_count', 'favorite_count', 'url', 'created_at', 'sentiment']]
+    #combined_df['created_at'] = pd.to_datetime(combined_df['created_at'])
 
-    combined_df.sort_values(by=['created_at'], inplace=True, ascending=True)
+    #combined_df.sort_values(by=['created_at'], inplace=True, ascending=True)
 
     # Display your data analysis results using Streamlit widgets
     # Data Overview Section
@@ -139,12 +135,7 @@ def data_analysis_page():
     # Text Preprocessing Section
     st.markdown("## Text Preprocessing")
     # Find the number of tweets per day and plot it
-    tweets_per_day = defaultdict(int)
-    for date in combined_df['created_at']:
-        tweets_per_day[date.date()] += 1
 
-    tweets_per_day = pd.DataFrame.from_dict(tweets_per_day, orient='index', columns=['count'])
-    tweets_per_day.sort_index(inplace=True)
 
     # Remove Twitter handles (@user)
     combined_df['Tidy_Tweets'] = np.vectorize(remove_pattern)(combined_df['full_text'], "@[\w]*")
@@ -163,7 +154,7 @@ def data_analysis_page():
     # Step 3: Removing Short Words
     st.write("3. **Removing Short Words:** Short words like 'a,' 'an,' 'the,' etc., don't usually provide much information. Removing them can make text analysis more meaningful.")
 
-    combined_df['Tidy_Tweets'] = combined_df['Tidy_Tweets'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 2]))
+    combined_df['Tidy_Tweets'] = combined_df['Tidy_Tweets'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 1]))
     st.write(combined_df[['full_text', 'Tidy_Tweets']].head())
 
     
@@ -252,7 +243,7 @@ def data_analysis_page():
         #st.write("Top 10 Hashtags for Negative Sentiment:")
         df_negative_plot = df_negative.nlargest(10, columns='Count')
         # Create a bar plot using Plotly Express
-        fig = px.bar(df_negative_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Positive Sentiment')
+        fig = px.bar(df_negative_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Negative Sentiment')
         
         # Customize the layout if needed
         fig.update_layout(xaxis_title='Count', yaxis_title='Hashtags', xaxis_ticks="outside")
