@@ -70,32 +70,32 @@ def Hashtags_Extract(x):
 
 
 def home_page():
-    st.header("Welcome to Twitter Data Analysis App")
-    st.write("This app allows you to analyze Twitter data.")
+    st.header("Welcome to Social Media Data Analysis App")
+    st.write("This app allows you to analyze political sentiment on both Twitter and Facebook.")
     st.write("Please select a page from the sidebar on the left.")
 
-    st.subheader("Importance of Political Sentiment Analysis on Twitter in Kenya")
+    st.subheader("Importance of Political Sentiment Analysis on Twitter and Facebook in Kenya")
     st.write(
-        "Twitter has become a significant platform for political discourse and engagement in Kenya, "
+        "Twitter and Facebook have become significant platforms for political discourse and engagement in Kenya, "
         "with politicians, citizens, and journalists actively participating in discussions related to "
-        "political issues. Political Sentiment Analysis on Twitter holds immense importance in the Kenyan sphere "
+        "political issues. Political Sentiment Analysis on both Twitter and Facebook holds immense importance in the Kenyan sphere "
         "for the following reasons:"
     )
 
-    st.markdown("1. **Real-time Insights:** Twitter provides real-time updates on political opinions, allowing analysts to gauge public sentiment as it evolves.")
+    st.markdown("1. **Real-time Insights:** Twitter and Facebook provide real-time updates on political opinions, allowing analysts to gauge public sentiment as it evolves.")
 
-    st.markdown("2. **Election Monitoring:** During elections, sentiment analysis can help track public sentiment towards political candidates and parties.")
+    st.markdown("2. **Election Monitoring:** During elections, sentiment analysis can help track public sentiment towards political candidates and parties on both platforms.")
 
-    st.markdown("3. **Public Policy:** Understanding public sentiment on key policy issues can inform government decisions and policymaking.")
+    st.markdown("3. **Public Policy:** Understanding public sentiment on key policy issues can inform government decisions and policymaking, and this extends to both Twitter and Facebook.")
 
-    st.markdown("4. **Media Monitoring:** Media outlets and journalists can use sentiment analysis to measure the impact of their political coverage and adjust their strategies accordingly.")
+    st.markdown("4. **Media Monitoring:** Media outlets and journalists can use sentiment analysis to measure the impact of their political coverage on both platforms and adjust their strategies accordingly.")
 
-    st.markdown("5. **Crisis Management:** Sentiment analysis can help identify emerging political crises or issues that require immediate attention.")
+    st.markdown("5. **Crisis Management:** Sentiment analysis can help identify emerging political crises or issues that require immediate attention, and this is applicable to both Twitter and Facebook.")
 
-    st.markdown("6. **Campaign Strategies:** Political campaigns can adjust their strategies based on public sentiment to improve their outreach and messaging.")
+    st.markdown("6. **Campaign Strategies:** Political campaigns can adjust their strategies based on public sentiment on both Twitter and Facebook to improve their outreach and messaging.")
 
     st.markdown(
-        "This app aims to provide tools for analyzing political sentiment on Twitter in Kenya, helping users gain insights "
+        "This app aims to provide tools for analyzing political sentiment on Twitter and Facebook in Kenya, helping users gain insights "
         "into the dynamic political landscape and its impact on society."
     )
 
@@ -104,7 +104,7 @@ def home_page():
 def data_analysis_page():
     #global combined_df
     st.header("Data Analysis")
-    st.subheader("Combine and analyze Twitter data")
+    st.subheader("Combine and analyze Twitter and Facebook data")
 
     # Load CSV files directly into a DataFrame
     #folder_path = '/home/tevin/Desktop/Tems/twitter/data/'
@@ -119,10 +119,11 @@ def data_analysis_page():
     # Display your data analysis results using Streamlit widgets
     # Data Overview Section
     st.markdown("## Data Overview")
-    st.write("Here's a sample of our Twitter data:")
+    st.write("Here's a sample of our Facebook data:")
     st.dataframe(combined_df.head())
 
-
+    st.write("Here's a sample of our Twitter data:")
+    st.dataframe(combined_df.loc[3000:3005,:])
   # Sentiment Distribution Section
     # Sentiment Distribution Pie Chart
     st.subheader("Sentiment Distribution")
