@@ -120,7 +120,7 @@ def data_analysis_page():
     # Data Overview Section
     st.markdown("## Data Overview")
     st.write("Here's a sample of our Facebook data:")
-    st.dataframe(combined_df.head())
+    st.dataframe(combined_df.loc[205:210,:])
 
     st.write("Here's a sample of our Twitter data:")
     st.dataframe(combined_df.loc[3000:3005,:])
