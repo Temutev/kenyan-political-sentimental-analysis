@@ -1,0 +1,5 @@
+index,Accuracy
+Decision Tree,0.69
+Logistic Regression,0.72
+Naive Bayes,0.71
+SVM,0.73

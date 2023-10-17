@@ -44,16 +44,20 @@ import requests
 import altair as alt 
 import io
 import plotly.express as px
+import joblib
+import nltk 
+
+nltk.download('stopwords')
 
 #from transformers import pipeline
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #sentiment_analysis = pipeline(model="finiteautomata/bertweet-base-sentiment-analysis")
-def remove_pattern(text, pattern):
-    if isinstance(text, str):
-        return re.sub(pattern, '', text)
-    else:
-        return text
+def remove_pattern(input_text, pattern):
+    r = re.findall(pattern, input_text)
+    for i in r:
+        input_text = re.sub(i, '', input_text)
+    return input_text
 
 
 #function to extract hashtags
@@ -107,14 +111,9 @@ def data_analysis_page():
     st.subheader("Combine and analyze Twitter and Facebook data")
 
     # Load CSV files directly into a DataFrame
-    #folder_path = '/home/tevin/Desktop/Tems/twitter/data/'
-    file_path = 'combined_data.csv'
-    combined_df = pd.read_csv(file_path)
+    combined_df = pd.read_csv('merged_df.csv')
 
-    #combined_df = combined_df[['full_text', 'reply_count', 'retweet_count', 'favorite_count', 'url', 'created_at', 'sentiment']]
-    #combined_df['created_at'] = pd.to_datetime(combined_df['created_at'])
-
-    #combined_df.sort_values(by=['created_at'], inplace=True, ascending=True)
+    
 
     # Display your data analysis results using Streamlit widgets
     # Data Overview Section
@@ -139,30 +138,30 @@ def data_analysis_page():
 
 
     # Remove Twitter handles (@user)
-    combined_df['Tidy_Tweets'] = np.vectorize(remove_pattern)(combined_df['full_text'], "@[\w]*")
+    combined_df['tidy_text'] = np.vectorize(remove_pattern)(combined_df['full_text'], "@[\w]*")
 
     # Step 1: Removing Twitter Handles
     st.write("1. **Removing Twitter Handles:** In text preprocessing, we often remove Twitter handles, which start with the '@' symbol, to ensure that they don't interfere with our analysis.")
 
-    st.write(combined_df[['full_text', 'Tidy_Tweets']].head())
+    st.write(combined_df[['full_text', 'tidy_text']].head())
 
     
     # Step 2: Removing Special Characters, Numbers, Punctuations
     st.write("2. **Removing Special Characters, Numbers, Punctuations:** We eliminate special characters, numbers, and punctuation marks from the text. This helps in focusing on the actual words and their meaning.")
-    combined_df['Tidy_Tweets'] = combined_df['Tidy_Tweets'].str.replace("[^a-zA-Z#]", " ")
-    st.write(combined_df[['full_text', 'Tidy_Tweets']].head())
+    combined_df['tidy_text'] = combined_df['tidy_text'].str.replace("[^a-zA-Z#]", " ")
+    st.write(combined_df[['full_text', 'tidy_text']].head())
 
     # Step 3: Removing Short Words
     st.write("3. **Removing Short Words:** Short words like 'a,' 'an,' 'the,' etc., don't usually provide much information. Removing them can make text analysis more meaningful.")
 
-    combined_df['Tidy_Tweets'] = combined_df['Tidy_Tweets'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 1]))
-    st.write(combined_df[['full_text', 'Tidy_Tweets']].head())
+    combined_df['tidy_text'] = combined_df['tidy_text'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 1]))
+    st.write(combined_df[['full_text', 'tidy_text']].head())
 
     
     # Step 4: Tokenization
     st.write("4. **Tokenization:** Tokenization involves splitting text into individual words or 'tokens.' It's a crucial step for many natural language processing tasks as it breaks down text into manageable units.")
 
-    tokenized_tweet = combined_df['Tidy_Tweets'].apply(lambda x: x.split())
+    tokenized_tweet = combined_df['tidy_text'].apply(lambda x: x.split())
     st.write(tokenized_tweet.head())
 
     # Step 5: Stemming
@@ -177,8 +176,8 @@ def data_analysis_page():
     for i in range(len(tokenized_tweet)):
         tokenized_tweet[i] = ' '.join(tokenized_tweet[i])
 
-    combined_df['Tidy_Tweets'] = tokenized_tweet
-    st.write(combined_df[['full_text', 'Tidy_Tweets']].head())
+    combined_df['tidy_text'] = tokenized_tweet
+    st.write(combined_df[['full_text', 'tidy_text']].head())
 
     # Conclusion
     st.write("These preprocessing steps help clean and prepare text data for various text analysis tasks, like sentiment analysis, topic modeling, and more.")
@@ -192,7 +191,7 @@ def data_analysis_page():
 
     with col1:
         st.write("Word Cloud for Positive Sentiment:")
-        all_words_positive = ' '.join([text for text in combined_df['Tidy_Tweets'][combined_df['sentiment'] == 'POS']])
+        all_words_positive = ' '.join([text for text in combined_df['tidy_text'][combined_df['sentiment'] == 'POS']])
         Mask = np.array(Image.open(requests.get('http://clipart-library.com/image_gallery2/Twitter-PNG-Image.png', stream=True).raw))
         image_colors = ImageColorGenerator(Mask)
         wc_positive = WordCloud(background_color='black', height=1500, width=4000, mask=Mask).generate(all_words_positive)
@@ -201,7 +200,7 @@ def data_analysis_page():
     # Word Cloud for negative sentiment
     with col2:
         st.write("Word Cloud for Negative Sentiment:")
-        all_words_negative = ' '.join([text for text in combined_df['Tidy_Tweets'][combined_df['sentiment'] == 'NEG']])
+        all_words_negative = ' '.join([text for text in combined_df['tidy_text'][combined_df['sentiment'] == 'NEG']])
         Mask = np.array(Image.open(requests.get('http://clipart-library.com/image_gallery2/Twitter-PNG-Image.png', stream=True).raw))
         image_colors = ImageColorGenerator(Mask)
         wc_negative = WordCloud(background_color='black', height=1500, width=4000, mask=Mask).generate(all_words_negative)
@@ -210,8 +209,8 @@ def data_analysis_page():
     # Top 10 Hashtags Section
     st.markdown("## Top 10 Hashtags")
     st.subheader("Top 10 Hashtags for Sentiments")
-    ht_positive = Hashtags_Extract(combined_df['Tidy_Tweets'][combined_df['sentiment'] == 'POS'])
-    ht_negative = Hashtags_Extract(combined_df['Tidy_Tweets'][combined_df['sentiment'] == 'NEG'])
+    ht_positive = Hashtags_Extract(combined_df['tidy_text'][combined_df['sentiment'] == 'POS'])
+    ht_negative = Hashtags_Extract(combined_df['tidy_text'][combined_df['sentiment'] == 'NEG'])
 
     # Unnesting list
     ht_positive_unnest = sum(ht_positive, [])
@@ -222,39 +221,36 @@ def data_analysis_page():
     df_positive = pd.DataFrame({'Hashtags': list(word_freq_positive.keys()), 'Count': list(word_freq_positive.values())})
     df_positive_plot = df_positive.nlargest(10, columns='Count')
 
-    col3,col4 = st.columns(2)
-    with col3:
-        # Plotting the barplot for the most frequently used words in hashtags for positive sentiment
-        #st.write("Top 10 Hashtags for Positive Sentiment:")
-        # Create a bar plot using Plotly Express
-        fig = px.bar(df_positive_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Positive Sentiment')
+    
+    # Create a bar plot using Plotly Express
+    fig = px.bar(df_positive_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Positive Sentiment')
         
-        # Customize the layout if needed
-        fig.update_layout(xaxis_title='Count', yaxis_title='Hashtags', xaxis_ticks="outside")
+    # Customize the layout if needed
+    fig.update_layout(xaxis_title='Count', yaxis_title='Hashtags', xaxis_ticks="outside")
         
-        # Display the plotly chart
-        st.plotly_chart(fig)
+    # Display the plotly chart
+    st.plotly_chart(fig)
 
     # Counting the frequency of words having negative sentiment
     word_freq_negative = nltk.FreqDist(ht_negative_unnest)
     df_negative = pd.DataFrame({'Hashtags': list(word_freq_negative.keys()), 'Count': list(word_freq_negative.values())})
 
-    with col4:
-        # Plotting the barplot for the most frequently used words in hashtags for negative sentiment
-        #st.write("Top 10 Hashtags for Negative Sentiment:")
-        df_negative_plot = df_negative.nlargest(10, columns='Count')
-        # Create a bar plot using Plotly Express
-        fig = px.bar(df_negative_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Negative Sentiment')
+  
+    # Plotting the barplot for the most frequently used words in hashtags for negative sentiment
+    #st.write("Top 10 Hashtags for Negative Sentiment:")
+    df_negative_plot = df_negative.nlargest(10, columns='Count')
+    # Create a bar plot using Plotly Express
+    fig = px.bar(df_negative_plot, x='Count', y='Hashtags', orientation='h', title='Top 10 Hashtags for Negative Sentiment')
         
-        # Customize the layout if needed
-        fig.update_layout(xaxis_title='Count', yaxis_title='Hashtags', xaxis_ticks="outside")
+    # Customize the layout if needed
+    fig.update_layout(xaxis_title='Count', yaxis_title='Hashtags', xaxis_ticks="outside")
         
-        # Display the plotly chart
-        st.plotly_chart(fig)
+    # Display the plotly chart
+    st.plotly_chart(fig)
 
 
     # Define a mapping dictionary
-    sentiment_mapping = {'POS': 0, 'NEG': 1, 'NEU': 2}
+    sentiment_mapping = {'POS': 1, 'NEG': 0, 'NEU': -1}
 
     # Map the 'sentiment' column to numerical labels
     combined_df['sentiment_label'] = combined_df['sentiment'].map(sentiment_mapping)
@@ -264,249 +260,47 @@ def data_analysis_page():
     st.session_state.combined_df = combined_df
 
 def sentiment_analysis_page():
-    # Access the combined_df from session_state
-    combined_df = st.session_state.combined_df
+
+
+    #load our df
+    bow_accuracy_df = pd.read_csv('bow_accuracy_df.csv')
+    tfidf_accuracy_df = pd.read_csv('tfidf_accuracy_df.csv')
+
     st.header("Sentiment Analysis")
-    st.subheader("Analyze sentiment of Twitter data")
+    st.subheader("Analyze sentiment of Twitter and Facebook Data")
 
-    st.markdown("### Bag-of-Words Model")
-    st.write("In this section, we analyze sentiment using a Bag-of-Words model.")
+    st.markdown("### Bag-of-Words (BoW) and TF-IDF for Sentiment Analysis")
+    st.write("In sentiment analysis, I use techniques like Bag-of-Words (BoW) and TF-IDF (Term Frequency-Inverse Document Frequency) for the following reasons:")
 
-    
-    bow_vectorizer = CountVectorizer(max_df=0.90, min_df=2, max_features=1000, stop_words='english')
+    st.write("1. **Feature Extraction:** BoW and TF-IDF convert text data into numerical vectors, making it possible for machine learning models to understand and classify sentiment.")
 
+    st.write("2. **Word Importance:** TF-IDF considers the importance of words in a document relative to a corpus, capturing valuable information for sentiment analysis.")
 
-    # bag-of-words feature matrix
-    bow = bow_vectorizer.fit_transform(combined_df['Tidy_Tweets'])
-    df_bow = pd.DataFrame(bow.todense())
-    tfidf = TfidfVectorizer(max_df=0.90, min_df=2, max_features=1000, stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(combined_df['Tidy_Tweets'])
-    df_tfidf = pd.DataFrame(tfidf_matrix.todense())
+    st.write("3. **Dimension Reduction:** BoW and TF-IDF reduce the complexity of text data, which is useful when working with large datasets.")
 
-    train_bow = bow[:8000]
-    train_bow.todense() 
+    st.write("4. **Interpretability:** These techniques provide interpretable features, helping us understand which words contribute to sentiment classification.")
 
-    train_tfidf_matrix = tfidf_matrix[:8000]
-    train_tfidf_matrix.todense()
+    st.write("5. **Efficiency:** BoW and TF-IDF are computationally efficient, making them suitable for tasks with limited resources.")
 
-    x_train_bow, x_valid_bow, y_train_bow, y_valid_bow = train_test_split(
-    train_bow, 
-    combined_df['sentiment_label'][:8000], 
-    test_size=0.3, 
-    random_state=2)
+    st.write("6. **Widely Used:** BoW and TF-IDF are widely used in natural language processing, with available resources and libraries for easy implementation.")
 
-    x_train_tfidf, x_valid_tfidf, y_train_tfidf, y_valid_tfidf = train_test_split(
-    train_tfidf_matrix, 
-    combined_df['sentiment_label'][:8000], 
-    test_size=0.3, 
-    random_state=17)
+    st.write("7. **Flexibility:** You can customize BoW and TF-IDF to incorporate domain-specific knowledge and adapt them to your specific task.")
 
-    y_train_bow.fillna(0, inplace=True)
-    y_valid_bow.fillna(0, inplace=True)
+    st.write("In summary, BoW and TF-IDF are essential tools for sentiment analysis, providing structured and interpretable features that help classify sentiment in text data.")
 
-    st.write("Training the Logistic Regression model...")
-    # Logistic Regression model on BOW features
-    logreg = LogisticRegression()
-    logreg.fit(x_train_bow, y_train_bow) # training the model
-    prediction_bow = logreg.predict_proba(x_valid_bow) # predicting on the validation set
 
-    #calculating the f1-score
-    prediction_int = prediction_bow[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
+    # Bag-of-Words (BoW) Section
+    st.markdown("## Bag-of-Words (BoW)")
+    st.write("Bag-of-Words (BoW) is a technique for extracting features from text data. It involves creating a vocabulary of all the unique words in the data and then creating vectors of word counts for each document in the data.")
 
-    #converting the results to integer type
-    prediction_int = prediction_int.astype(int)
+    st.write("Here are the results of the models trained on the BoW vectors:")
+    st.write(bow_accuracy_df)
 
-    log_bow= f1_score(y_valid_bow, prediction_int, average='weighted') # calculating f1 score
-    acc_log_bow = accuracy_score(y_valid_bow, prediction_int) # calculating accuracy score
-
-    #print("F1-Score for logistic regression BOW is: ",log_bow)
-    st.write("F1-Score for logistic regression BOW is: ",round(log_bow,2))
-
-    #print("Accuracy for logistic regression BOW is: ",acc_log_bow)
-    st.write("Accuracy for logistic regression BOW is: ",round(acc_log_bow,2))
-
-    y_train_tfidf.fillna(0, inplace=True)
-    y_valid_tfidf.fillna(0, inplace=True)
-
-    #fitting the model with TFIDF features
-    logreg.fit(x_train_tfidf, y_train_tfidf)
-
-    #predicting on the validation set
-    prediction_tfidf = logreg.predict_proba(x_valid_tfidf)
-
-    #calculating the f1-score
-    prediction_int = prediction_tfidf[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-
-    prediction_int = prediction_int.astype(int)
-
-    log_tfidf= f1_score(y_valid_tfidf, prediction_int, average='weighted') # calculating f1 score
-    acc_log_tfidf = accuracy_score(y_valid_tfidf, prediction_int) # calculating accuracy score
-    
-    #print("F1-Score for logistic regression TFIDF is: ",log_tfidf)
-    #st.write("F1-Score for logistic regression TFIDF is: ",log_tfidf)
-
-    #print("Accuracy for logistic regression TFIDF is: ",acc_log_tfidf)
-    #st.write("Accuracy for logistic regression TFIDF is: ",acc_log_tfidf)
-
-
-
-    # SVM 
-    svm = SVC(C=1.0, kernel='linear', degree=3, gamma='auto',probability=True)
-
-    svm.fit(x_train_bow, y_train_bow) # training the model
-    prediction_bow = svm.predict_proba(x_valid_bow) # predicting on the validation set
-
-    #calculating the f1-score
-    prediction_int = prediction_bow[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-
-    #converting the results to integer type
-    prediction_int = prediction_int.astype(int)
-
-    svm_bow = f1_score(y_valid_bow, prediction_int, average='weighted') # calculating f1 score
-    svm_acc_bow = accuracy_score(y_valid_bow, prediction_int) # calculating accuracy score
-
-    #print("F1-Score for SVM BOW is: ",svm_bow)
-    #st.write("F1-Score for SVM BOW is: ",svm_bow)
-
-    #print("Accuracy for SVM BOW is: ",svm_acc_bow)
-    #st.write("Accuracy for SVM BOW is: ",svm_acc_bow)
-
-
-
-    svm.fit(x_train_tfidf, y_train_tfidf) # training the model
-    prediction_tfidf = svm.predict_proba(x_valid_tfidf) # predicting on the validation set
-
-    prediction_int = prediction_tfidf[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-    prediction_int = prediction_int.astype(int)
-
-    svm_tfidf = f1_score(y_valid_tfidf, prediction_int, average='weighted') # calculating f1 score
-    svm_acc_tfidf = accuracy_score(y_valid_tfidf, prediction_int) # calculating accuracy score
-
-    #print("F1-Score for SVM TFIDF is: ",svm_tfidf)
-    #st.write("F1-Score for SVM TFIDF is: ",svm_tfidf)
-
-    #print("Accuracy for SVM TFIDF is: ",svm_acc_tfidf)
-    #st.write("Accuracy for SVM TFIDF is: ",svm_acc_tfidf)
-
-
-
-    #Naive Bayes
-    from sklearn import naive_bayes
-    nb = naive_bayes.MultinomialNB()
-    nb.fit(x_train_bow, y_train_bow) # training the model
-
-    prediction_bow = nb.predict_proba(x_valid_bow) # predicting on the validation set
-    prediction_int = prediction_bow[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-    prediction_int = prediction_int.astype(int)
-
-    nb_bow = f1_score(y_valid_bow, prediction_int, average='weighted') # calculating f1 score
-    nb_acc_bow = accuracy_score(y_valid_bow, prediction_int) # calculating accuracy score
-
-    #print("F1-Score for Naive Bayes BOW is: ",nb_bow)
-    #st.write("F1-Score for Naive Bayes BOW is: ",nb_bow)
-
-    #print("Accuracy for Naive Bayes BOW is: ",nb_acc_bow)
-    #st.write("Accuracy for Naive Bayes BOW is: ",nb_acc_bow)
-
-
-    nb.fit(x_train_tfidf, y_train_tfidf) # training the model
-    prediction_tfidf = nb.predict_proba(x_valid_tfidf) # predicting on the validation set
-
-    prediction_int = prediction_tfidf[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-    prediction_int = prediction_int.astype(int)
-
-    nb_tfidf = f1_score(y_valid_tfidf, prediction_int, average='weighted') # calculating f1 score
-    nb_acc_tfidf = accuracy_score(y_valid_tfidf, prediction_int) # calculating accuracy score
-
-    #print("F1-Score for Naive Bayes TFIDF is: ",nb_tfidf)
-    #st.write("F1-Score for Naive Bayes TFIDF is: ",nb_tfidf)
-
-    #print("Accuracy for Naive Bayes TFIDF is: ",nb_acc_tfidf)
-    #st.write("Accuracy for Naive Bayes TFIDF is: ",nb_acc_tfidf)
-
-    
-
-    dct = DecisionTreeClassifier(criterion='entropy', random_state=1)
-
-    dct.fit(x_train_bow, y_train_bow) # training the model
-
-    dct_bow = dct.predict_proba(x_valid_bow) # predicting on the validation set
-
-    #calculating the f1-score
-    dct_bow = dct_bow[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-    dct_int_bow = dct_bow.astype(int)
-
-    dct_score_bow = f1_score(y_valid_bow, dct_int_bow, average='weighted') # calculating f1 score
-    dct_acc_bow = accuracy_score(y_valid_bow, dct_int_bow) # calculating accuracy score
-
-    #print("F1-Score for Decision Tree BOW is: ",dct_score_bow)
-    #st.write("F1-Score for Decision Tree BOW is: ",dct_score_bow)
-
-    #print("Accuracy for Decision Tree BOW is: ",dct_acc_bow)
-    #st.write("Accuracy for Decision Tree BOW is: ",dct_acc_bow)
-
-
-    dct.fit(x_train_tfidf, y_train_tfidf) # training the model
-    dct_tfidf = dct.predict_proba(x_valid_tfidf) # predicting on the validation set
-    #calculating the f1-score
-    dct_tfidf = dct_tfidf[:,1] >= 0.3 # if prediction is greater than or equal to 0.3 than 1 else 0
-    dct_int_tfidf = dct_tfidf.astype(int)
-
-    dct_score_tfidf = f1_score(y_valid_tfidf, dct_int_tfidf, average='weighted') # calculating f1 score
-    dct_acc_tfidf = accuracy_score(y_valid_tfidf, dct_int_tfidf) # calculating accuracy score
-
-    #print("F1-Score for Decision Tree TFIDF is: ",dct_score_tfidf)
-    #st.write("F1-Score for Decision Tree TFIDF is: ",dct_score_tfidf)
-
-    #print("Accuracy for Decision Tree TFIDF is: ",dct_acc_tfidf)
-    #st.write("Accuracy for Decision Tree TFIDF is: ",dct_acc_tfidf)
-
-    #Model comparison
-    Algo_1_bow = ['LogisticRegression(Bag-of-Words)','SVM(Bag-of-Words)','Naive Bayes(Bag-of-Words)','Decision Tree(Bag-of-Words)']
-    score_1_bow = [log_bow,svm_bow,nb_bow,dct_score_bow]
-
-    compare_1_bow = pd.DataFrame({'Model':Algo_1_bow,'F1_Score':score_1_bow},index=[i for i in range(1,5)])
-    
-    Algo_1_tfidf = ['LogisticRegression(TF-IDF)','SVM(TF-IDF)','Naive Bayes(TF-IDF)','Decision Tree(TF-IDF)']
-    score_1_tfidf = [log_tfidf,svm_tfidf,nb_tfidf,dct_score_tfidf]
-
-    compare_1_tfidf = pd.DataFrame({'Model':Algo_1_tfidf,'F1_Score':score_1_tfidf},index=[i for i in range(1,5)])
-
-    st.write("Comparison of Models using Bag-of-Words(F1-Score)")
-
-    st.write(compare_1_bow)
-
-    st.write("Comparison of Models using TF-IDF(F1-Score)")
-
-    st.write(compare_1_tfidf)
-
-    Algo_1_acc_bow = ['LogisticRegression','SVM','Naive Bayes','Decision Tree']
-    score_1_acc_bow = [acc_log_bow,svm_acc_bow,nb_acc_bow,dct_acc_bow]
-
-    compare_1_acc_bow = pd.DataFrame({'Model':Algo_1_acc_bow,'Accuracy':score_1_acc_bow},index=[i for i in range(1,5)])
-
-    Algo_1_acc_tfidf = ['LogisticRegression','SVM','Naive Bayes','Decision Tree']
-    score_1_acc_tfidf = [acc_log_tfidf,svm_acc_tfidf,nb_acc_tfidf,dct_acc_tfidf]
-
-    compare_1_acc_tfidf = pd.DataFrame({'Model':Algo_1_acc_tfidf,'Accuracy':score_1_acc_tfidf},index=[i for i in range(1,5)])
-
-    
-
-    st.write("Comparison of Models using Bag-of-Words(Accuracy)")
-
-    st.write(compare_1_acc_bow)
-    
-
-    st.write("Comparison of Models using TF-IDF(Accuracy)")
-
-    st.write(compare_1_acc_tfidf)
-
-
-    # Plot the DataFrame using a bar chart
-    st.write("Bar Chart  for Bag-of-Words(F1_SCORE):")
+     # Plot the DataFrame using a bar chart
+    st.write("Bar Chart  for Bag-of-Words:")
     # Create a bar chart using Plotly Express
-    fig = px.bar(compare_1_bow, x='Model', y='F1_Score',
-                  title='Bar Chart for Bag-of-Words (F1 Score)')
+    fig = px.bar(bow_accuracy_df, x='index', y='Accuracy',
+                  title='Bar Chart for Bag-of-Words ')
     
     # Customize the layout if needed
     fig.update_xaxes(title_text='Category')
@@ -515,42 +309,29 @@ def sentiment_analysis_page():
     # Display the Plotly chart
     st.plotly_chart(fig)
 
-    # Plot the DataFrame using a bar chart
-    st.write("Bar Chart  for Bag-of-Words (Accuracy):")
-    fig = px.bar(compare_1_acc_bow, x='Model', y='Accuracy',
-                  title='Bar Chart for Bag-of-Words (Accuracy)')
-    
-    # Customize the layout if needed
-    fig.update_xaxes(title_text='Category')
-    fig.update_yaxes(title_text='Values')
-    
-    # Display the Plotly chart
-    st.plotly_chart(fig)
 
-    # Plot the DataFrame using a bar chart
-    st.write("Bar Chart  for TFIDF(F1_SCORE):")
-    fig = px.bar(compare_1_tfidf, x='Model', y='F1_Score',
-                  title='Bar Chart for TFIDF (F1 Score)')
-    
-    # Customize the layout if needed
-    fig.update_xaxes(title_text='Category')
-    fig.update_yaxes(title_text='Values')
-    
-    # Display the Plotly chart
-    st.plotly_chart(fig)
+    # TF-IDF Section
+    st.markdown("## TF-IDF")
+    st.write("TF-IDF (Term Frequency-Inverse Document Frequency) is a technique for extracting features from text data. It involves creating a vocabulary of all the unique words in the data and then creating vectors of word counts for each document in the data.")
+
+    st.write("Here are the results of the models trained on the TF-IDF vectors:")
+    st.write(tfidf_accuracy_df)
 
 
     # Plot the DataFrame using a bar chart
-    st.write("Bar Chart  for TFIDF (Accuracy):")
-    fig = px.bar(compare_1_acc_tfidf, x='Model', y='Accuracy',
-                  title='Bar Chart for TFIDF (Accuracy)')
+    st.write("Bar Chart for TF-IDF:")
+    # Create a bar chart using Plotly Express
+    fig = px.bar(tfidf_accuracy_df, x='index', y='Accuracy',
+                  title='Bar Chart for TF-IDF')
     
     # Customize the layout if needed
     fig.update_xaxes(title_text='Category')
     fig.update_yaxes(title_text='Values')
-    
+
     # Display the Plotly chart
     st.plotly_chart(fig)
+
+
 
 
 # Create a sidebar navigation
@@ -566,9 +347,6 @@ selected_page = st.sidebar.radio("Go to", list(app_pages.keys()))
 
 # Display the selected page
 app_pages[selected_page]()
-#if __name__ == "__main__":
-#    combined_df = data_analysis_page()
-#    sentiment_analysis_page(combined_df)
 
 
 
