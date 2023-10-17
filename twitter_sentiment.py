@@ -270,6 +270,10 @@ def sentiment_analysis_page():
     bow_accuracy_df = pd.read_csv('bow_accuracy_df.csv')
     tfidf_accuracy_df = pd.read_csv('tfidf_accuracy_df.csv')
 
+
+    bow_f1_score_df = pd.read_csv('bow_f1_score_df.csv')
+    tfidf_f1_score_df = pd.read_csv('tfidf_f1_score_df.csv')
+
     st.header("Sentiment Analysis")
     st.subheader("Analyze sentiment of Twitter and Facebook Data")
 
@@ -313,6 +317,20 @@ def sentiment_analysis_page():
     # Display the Plotly chart
     st.plotly_chart(fig)
 
+    #f1-score
+    st.write("F1-Score for Bag-of-Words:")
+    st.write(bow_f1_score_df)
+
+    st.write("Bar Chart for F1-Scores:")
+    fig = px.bar(bow_f1_score_df, x='Models', y=['Negative', 'Neutral', 'Positive'], title='Bar Chart for F1-Scores')
+    fig.update_xaxes(title_text='Models')
+    fig.update_yaxes(title_text='F1-Score')
+
+    st.plotly_chart(fig)
+
+
+
+
 
     # TF-IDF Section
     st.markdown("## TF-IDF")
@@ -334,6 +352,24 @@ def sentiment_analysis_page():
 
     # Display the Plotly chart
     st.plotly_chart(fig)
+
+    #f1-score
+
+    st.write("F1-Score for TF-IDF:")
+    st.write(tfidf_f1_score_df)
+
+    # Plot the DataFrame using a bar chart
+    st.write("Bar Chart for TF-IDF:")
+    fig = px.bar(tfidf_f1_score_df, x='Models', y=['Negative', 'Neutral', 'Positive'], title='Bar Chart for F1-Scores')
+    fig.update_xaxes(title_text='Models')
+    fig.update_yaxes(title_text='F1-Score')
+
+    # Display the Plotly chart
+    st.plotly_chart(fig)
+
+    # Conclusion
+
+    st.write("In summary, BoW and TF-IDF are essential tools for sentiment analysis, providing structured and interpretable features that help classify sentiment in text data.")
 
 
 
