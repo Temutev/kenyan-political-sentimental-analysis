@@ -54,6 +54,10 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #sentiment_analysis = pipeline(model="finiteautomata/bertweet-base-sentiment-analysis")
 def remove_pattern(input_text, pattern):
+    # Check if the input_text is a string, and if not, convert it to a string
+    if not isinstance(input_text, str):
+        input_text = str(input_text)
+    
     r = re.findall(pattern, input_text)
     for i in r:
         input_text = re.sub(i, '', input_text)
