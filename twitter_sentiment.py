@@ -275,7 +275,6 @@ def sentiment_analysis_page():
     tfidf_f1_score_df = pd.read_csv('tfidf_f1_score_df.csv')
 
     st.header("Sentiment Analysis")
-    st.subheader("Analyze sentiment of Twitter and Facebook Data")
 
     st.markdown("### Bag-of-Words (BoW) and TF-IDF for Sentiment Analysis")
     st.write("In sentiment analysis, I use techniques like Bag-of-Words (BoW) and TF-IDF (Term Frequency-Inverse Document Frequency) for the following reasons:")
@@ -301,11 +300,91 @@ def sentiment_analysis_page():
     st.markdown("## Bag-of-Words (BoW)")
     st.write("Bag-of-Words (BoW) is a technique for extracting features from text data. It involves creating a vocabulary of all the unique words in the data and then creating vectors of word counts for each document in the data.")
 
+    code ="""
+    
+        from  sklearn.naive_bayes import ComplementNB,BernoulliNB
+
+        model_dir ="saved_models/"
+
+        # Create dictionaries to store F1-Scores and Accuracy for each classifier
+        bow_f1_score = {}
+        bow_accuracy_score = {}
+        saved_models ={}
+
+        # Create a dictionary of classifiers
+        classifiers = {
+            'Mulitinomial Naive Bayes': MultinomialNB(),
+            'SVM': SVC(probability=True),  # Set probability=True for SVC
+        }
+
+
+        # Iterate through each classifier
+        for classifier_name, classifier in classifiers.items():
+            # Fit the model on the training data
+            classifier.fit(x_train_bow, y_train_bow)
+
+            # Predict on the validation set
+            if 'SVM' in classifier_name:
+                prediction = classifier.predict(x_valid_bow)  # Use predict for SVM
+            else:
+                prediction = classifier.predict(x_valid_bow)
+
+            # Calculate the F1-Score and Accuracy for each class
+            f1 = np.round(f1_score(y_valid_bow, prediction, average=None), 2)
+            accuracy = np.round(accuracy_score(y_valid_bow, prediction), 2)
+
+            # Store the F1-Score and Accuracy in the dictionaries
+            bow_f1_score[classifier_name] = f1
+            bow_accuracy_score[classifier_name] = accuracy
+
+            # Print the F1-Score and Accuracy for each class
+            print(f"{classifier_name}:")
+            for class_idx, f1_score_class in enumerate(f1):
+                print(f"Class {class_idx}: F1-Score: {f1_score_class}")
+            print(f"Accuracy: {accuracy}")
+            print()
+
+            # Save the model
+            model_filename =f"{model_dir}{classifier_name}_bow_model.joblib"
+            joblib.dump(classifier, model_filename)
+
+            # Save the model in the dictionary
+            saved_models[classifier_name] = model_filename
+            print(f"{classifier_name} model saved to {model_filename}")
+
+
+        # Print the dictionaries containing F1-Scores and Accuracy
+        print("F1-Scores for BoW:")
+        print(bow_f1_score)
+        print("Accuracy Scores for BoW:")
+        print(bow_accuracy_score)
+
+        Mulitinomial Naive Bayes:
+        Class 0: F1-Score: 0.79
+        Class 1: F1-Score: 0.6
+        Class 2: F1-Score: 0.67
+        Accuracy: 0.71
+
+        Mulitinomial Naive Bayes model saved to saved_models/Mulitinomial Naive Bayes_bow_model.joblib
+        SVM:
+        Class 0: F1-Score: 0.82
+        Class 1: F1-Score: 0.67
+        Class 2: F1-Score: 0.76
+        Accuracy: 0.77
+
+        SVM model saved to saved_models/SVM_bow_model.joblib
+        F1-Scores for BoW:
+        {'Mulitinomial Naive Bayes': array([0.79, 0.6 , 0.67]), 'SVM': array([0.82, 0.67, 0.76])}
+        Accuracy Scores for BoW:
+        {'Mulitinomial Naive Bayes': 0.71, 'SVM': 0.77}
+
+    """
+    st.code(code, language="python")
+
     st.write("Here are the results of the models trained on the BoW vectors:")
     st.write(bow_accuracy_df)
 
      # Plot the DataFrame using a bar chart
-    st.write("Bar Chart  for Bag-of-Words:")
     # Create a bar chart using Plotly Express
     fig = px.bar(bow_accuracy_df, x='index', y='Accuracy',
                   title='Bar Chart for Bag-of-Words ')
@@ -336,6 +415,81 @@ def sentiment_analysis_page():
     st.markdown("## TF-IDF")
     st.write("TF-IDF (Term Frequency-Inverse Document Frequency) is a technique for extracting features from text data. It involves creating a vocabulary of all the unique words in the data and then creating vectors of word counts for each document in the data.")
 
+    code = """
+
+        model_dir ="saved_models/"
+        # Create dictionaries to store F1-Scores and Accuracy for each classifier
+        tfidf_f1_score = {}
+        tfidf_accuracy_score = {}
+        saved_models={}
+
+        # Create a dictionary of classifiers
+        classifiers = {
+            'SVM': SVC(probability=True),  # Set probability=True for SVC
+            'Multinomial Naive Bayes': MultinomialNB(),
+        }
+        # Iterate through each classifier
+        for classifier_name, classifier in classifiers.items():
+            # Fit the model on the training data
+            classifier.fit(x_train_bow, y_train_bow)
+
+            # Predict on the validation set
+            if 'SVM' in classifier_name:
+                prediction = classifier.predict(x_valid_tfidf)  # Use predict for SVM
+            else:
+                prediction = classifier.predict(x_valid_tfidf)
+
+            # Calculate the F1-Score and Accuracy for each class
+            f1 = np.round(f1_score(y_valid_tfidf, prediction, average=None), 2)
+            accuracy = np.round(accuracy_score(y_valid_tfidf, prediction), 2)
+
+            # Store the F1-Score and Accuracy in the dictionaries
+            tfidf_f1_score[classifier_name] = f1
+            tfidf_accuracy_score[classifier_name] = accuracy
+
+            # Print the F1-Score and Accuracy for each class
+            print(f"{classifier_name}:")
+            for class_idx, f1_score_class in enumerate(f1):
+                print(f"Class {class_idx}: F1-Score: {f1_score_class}")
+            print(f"Accuracy: {accuracy}")
+            print()
+
+            # Save the model
+            model_filename =f"{model_dir}{classifier_name}_tfidf_model.joblib"
+            joblib.dump(classifier, model_filename)
+
+            # Save the model in the dictionary
+            saved_models[classifier_name] = model_filename
+            print(f"{classifier_name} model saved to {model_filename}")
+
+
+        # Print the dictionaries containing F1-Scores and Accuracy
+        print("F1-Scores for TF-IDF:")
+        print(tfidf_f1_score)
+        print("Accuracy Scores for TF-IDF:")
+        print(tfidf_accuracy_score)
+
+        SVM:
+        Class 0: F1-Score: 0.47
+        Class 1: F1-Score: 0.15
+        Class 2: F1-Score: 0.63
+        Accuracy: 0.54
+
+        SVM model saved to saved_models/SVM_tfidf_model.joblib
+        Multinomial Naive Bayes:
+        Class 0: F1-Score: 0.79
+        Class 1: F1-Score: 0.62
+        Class 2: F1-Score: 0.69
+        Accuracy: 0.73
+
+        Multinomial Naive Bayes model saved to saved_models/Multinomial Naive Bayes_tfidf_model.joblib
+        F1-Scores for TF-IDF:
+        {'SVM': array([0.47, 0.15, 0.63]), 'Multinomial Naive Bayes': array([0.79, 0.62, 0.69])}
+        Accuracy Scores for TF-IDF:
+        {'SVM': 0.54, 'Multinomial Naive Bayes': 0.73}
+
+    """
+    st.code(code, language="python")
     st.write("Here are the results of the models trained on the TF-IDF vectors:")
     st.write(tfidf_accuracy_df)
 
@@ -372,13 +526,75 @@ def sentiment_analysis_page():
     st.write("In summary, BoW and TF-IDF are essential tools for sentiment analysis, providing structured and interpretable features that help classify sentiment in text data.")
 
 
+    st.write("Among the models trained, SVM has shown higher accuracy and F1-scores compared to Multinomial Naive Bayes. SVM is a powerful classifier that works well in high-dimensional spaces and is effective for text classification tasks. This is why we prefer SVM in this context.")
 
+    st.write("To further improve the model's performance, we will use the BaggingClassifier, which combines multiple classifiers to enhance predictive accuracy and reduce overfitting. Stay tuned for our efforts to boost the sentiment analysis model using ensemble techniques!")
+
+    st.markdown("## BaggingClassifier for Model Improvement")
+
+    code = """
+    from sklearn.ensemble import BaggingClassifier
+    bgc = BaggingClassifier(base_estimator=svc_bow, n_estimators=250, random_state=42)
+    bgc.fit(x_train_bow, y_train_bow)
+
+    prediction = bgc.predict(x_valid_bow)
+    print("F1-Score:", f1_score(y_valid_bow, prediction, average=None))
+    print("Accuracy-score", round(accuracy_score(y_valid_bow, prediction), 2))
+
+    F1-Score: [0.81372855 0.67669173 0.75587467]
+    Accuracy-score 0.77
+    """
+
+    st.code(code, language="python")
+        
+    st.write("As you can see, the Bagging approach resulted in F1-Scores and Accuracy similar to the original SVM model. While Bagging can be effective in improving model performance, in this specific case, the initial SVM model already performed quite well, and the Bagging approach didn't lead to a significant enhancement.")
+
+        # Streamlit app section
+    st.markdown("## What is the SVM Model Good For?")
+
+    st.write("The Support Vector Machine (SVM) model, as demonstrated by our results, is particularly effective in sentiment analysis for several reasons:")
+
+    # List of reasons
+    svm_advantages = [
+        "1. **High Accuracy:** The SVM model achieved an accuracy of 0.77, demonstrating its ability to make precise sentiment predictions.",
+        "2. **Balanced F1-Scores:** It provided balanced F1-Scores across different sentiment classes, indicating its proficiency in classifying both positive and negative sentiments.",
+        "3. **Robust Performance:** SVM is known for its robustness and effectiveness in high-dimensional feature spaces, making it well-suited for text classification tasks.",
+        "4. **Interpretability:** SVM provides good interpretability as it identifies support vectors, which are essential for understanding the model's decision boundaries.",
+        "5. **Preferable for Identifying Negative Sentiments:** SVM's ability to capture complex decision boundaries and distinguish fine-grained patterns in the data makes it particularly suitable for identifying negative sentiments in text. It excels at recognizing negative language cues and nuances, which are crucial for sentiment analysis.",
+    ]
+
+    # Display the advantages of the SVM model
+    for advantage in svm_advantages:
+        st.write(advantage)
+
+
+def further_research():
+    # Streamlit app section
+    st.markdown("## Further Research and Actionable Insights")
+
+    st.write("In our ongoing quest to improve sentiment analysis, there are several avenues for further research and actionable insights. Here are some next steps to consider:")
+
+    # List of next steps and actionable insights
+    next_steps = [
+        "1. **Fine-Tuning Hyperparameters:** Experiment with different hyperparameters for the SVM and BaggingClassifier to optimize model performance.",
+        "2. **Feature Engineering:** Explore advanced text preprocessing techniques, such as word embeddings or word2vec, to capture more nuanced text representations.",
+        "3. **Ensemble Methods:** Try other ensemble methods like Random Forest, AdaBoost, or Stacking, and evaluate their impact on the model.",
+        "4. **Text Augmentation:** Consider data augmentation techniques to increase the size and diversity of your training dataset, which can lead to improved generalization.",
+        "5. **Model Interpretability:** Implement techniques for model interpretability, such as LIME or SHAP, to gain insights into why the model makes certain predictions.",
+        "6. **Continuous Monitoring:** Continuously monitor model performance and retrain it with new data to adapt to evolving language and trends.",
+        "7. **User Feedback:** Collect feedback from users of your sentiment analysis tool to understand their needs and refine the model accordingly.",
+    ]
+
+    # Display the next steps and insights
+    for step in next_steps:
+        st.write(step)
 
 # Create a sidebar navigation
 app_pages = {
     "Home": home_page,
     "Data Analysis": data_analysis_page,
     "Modelling": sentiment_analysis_page,
+    "Further Research": further_research,
 }
 
 # Add a Streamlit sidebar for navigation
