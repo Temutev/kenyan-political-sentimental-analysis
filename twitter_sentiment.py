@@ -46,6 +46,12 @@ import io
 import plotly.express as px
 import joblib
 import nltk 
+import re
+import nltk
+from nltk.stem.porter import PorterStemmer
+from sklearn.feature_extraction.text import CountVectorizer
+import joblib  # Import joblib to load the fitted CountVectorizer
+
 
 nltk.download('stopwords')
 
@@ -526,11 +532,11 @@ def sentiment_analysis_page():
     st.write("In summary, BoW and TF-IDF are essential tools for sentiment analysis, providing structured and interpretable features that help classify sentiment in text data.")
 
 
-    st.write("Among the models trained, SVM has shown higher accuracy and F1-scores compared to Multinomial Naive Bayes. SVM is a powerful classifier that works well in high-dimensional spaces and is effective for text classification tasks. This is why we prefer SVM in this context.")
+    st.write("Among the models trained, SVM has shown higher accuracy and F1-scores compared to Multinomial Naive Bayes. SVM is a powerful classifier that works well in high-dimensional spaces and is effective for text classification tasks.")
 
-    st.write("To further improve the model's performance, we will use the BaggingClassifier, which combines multiple classifiers to enhance predictive accuracy and reduce overfitting. Stay tuned for our efforts to boost the sentiment analysis model using ensemble techniques!")
+    st.write("To further improve the model's performance, we  used the StackingClassifier, which combines multiple classifiers to enhance predictive accuracy and reduce overfitting. ")
 
-    st.markdown("## BaggingClassifier for Model Improvement")
+    ##st.markdown("## BaggingClassifier for Model Improvement")
 
     code = """
     from sklearn.ensemble import BaggingClassifier
@@ -547,25 +553,43 @@ def sentiment_analysis_page():
 
     #st.code(code, language="python")
         
-    st.write("As you can see, the Bagging approach resulted in F1-Scores and Accuracy similar to the original SVM model. While Bagging can be effective in improving model performance, in this specific case, the initial SVM model already performed quite well, and the Bagging approach didn't lead to a significant enhancement.")
+    st.title("Why Stacking Helps Improve Predictions")
 
-        # Streamlit app section
-    st.markdown("## What is the SVM Model Good For?")
+    st.write("Stacking is a machine learning technique that combines the predictions of different models to improve accuracy.")
+    st.write("Here's how it can help:")
 
-    st.write("The Support Vector Machine (SVM) model, as demonstrated by our results, is particularly effective in sentiment analysis for several reasons:")
+    st.markdown("1. **Diverse Models:** Stacking uses a mix of models with different strengths and weaknesses. Each model may find different patterns in the data.")
 
-    # List of reasons
-    svm_advantages = [
-        "1. **High Accuracy:** The SVM model achieved an accuracy of 0.77, demonstrating its ability to make precise sentiment predictions.",
-        "2. **Balanced F1-Scores:** It provided balanced F1-Scores across different sentiment classes, indicating its proficiency in classifying both positive and negative sentiments.",
-        "3. **Robust Performance:** SVM is known for its robustness and effectiveness in high-dimensional feature spaces, making it well-suited for text classification tasks.",
-        "4. **Interpretability:** SVM provides good interpretability as it identifies support vectors, which are essential for understanding the model's decision boundaries.",
-        "5. **Preferable for Identifying Negative Sentiments:** SVM's ability to capture complex decision boundaries and distinguish fine-grained patterns in the data makes it particularly suitable for identifying negative sentiments in text. It excels at recognizing negative language cues and nuances, which are crucial for sentiment analysis.",
-    ]
+    st.markdown("2. **Reduced Overfitting:** By combining multiple models, stacking reduces the risk of overfitting. It generalizes better to new data.")
 
-    # Display the advantages of the SVM model
-    for advantage in svm_advantages:
-        st.write(advantage)
+    st.markdown("3. **Improved Accuracy:** Stacking's final estimator optimally weighs the predictions, resulting in more accurate and reliable predictions.")
+
+    st.markdown("4. **Robustness:** If one model struggles on specific data, others may compensate, making the model more robust.")
+
+    st.title("Stacking Ensemble Results")
+
+    st.write("In our specific implementation, the stacking ensemble achieved:")
+    st.write("- An Accuracy score  of approximately 0.78")
+
+    st.write("This improvement demonstrates that the stacking technique:")
+    st.write("- Combines the strengths of different classifiers")
+    st.write("- Produces better predictions for our problem")
+
+
+    st.title("Try the Model")
+
+    st.write("Now that we've trained our model, let's try it out!")
+
+    # Collect user input
+    user_input = st.text_input("Enter a text to predict sentiment")
+
+    if st.button("Predict Sentiment"):
+        if user_input:
+            # Call the predict_sentiment function
+            predicted_sentiment = predict_sentiment(user_input)
+
+            # Display the predicted sentiment
+            st.write(f"Predicted sentiment: **{predicted_sentiment}**")
 
 
 def further_research():
@@ -588,6 +612,53 @@ def further_research():
     # Display the next steps and insights
     for step in next_steps:
         st.write(step)
+
+
+# Load the Bagging Classifier model
+model = joblib.load('final_model.joblib')
+
+# Load the fitted CountVectorizer from your training code
+vectorizer = joblib.load('bow_vectorizer.joblib')
+
+
+
+def preprocess_user_input(input_text):
+
+    # Remove special characters, numbers, and punctuations
+    cleaned_text = re.sub("[^a-zA-Z#]", " ", input_text)
+
+    # Tokenization (split the text into words)
+    tokenized_text = cleaned_text.split()
+
+    # Stemming (reduce words to their root form)
+    stemmer = PorterStemmer()
+    stemmed_text = [stemmer.stem(word) for word in tokenized_text]
+
+    # Combine the processed words back into a single string
+    processed_input = ' '.join(stemmed_text)
+
+    # Vectorize the processed input using the fitted CountVectorizer
+    processed_input_vectorized = vectorizer.transform([processed_input])
+
+    return processed_input_vectorized
+
+
+
+def predict_sentiment(input_text):
+
+    
+
+    # Preprocess the user input (cleaning, tokenization, etc.) to match the format used during model training
+    preprocessed_input = preprocess_user_input(input_text)
+
+    # Use the loaded model to make a prediction
+    sentiment_label = model.predict(preprocessed_input)[0]  # Extract the first element
+
+    # Map the numeric label back to 'positive', 'negative', or 'neutral'
+    sentiment_mapping = {0: 'positive', 1: 'negative', 2: 'neutral'}
+    predicted_sentiment = sentiment_mapping[sentiment_label]
+
+    return predicted_sentiment
 
 # Create a sidebar navigation
 app_pages = {
