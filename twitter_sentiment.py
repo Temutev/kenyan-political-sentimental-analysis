@@ -379,7 +379,7 @@ def sentiment_analysis_page():
         {'Mulitinomial Naive Bayes': 0.71, 'SVM': 0.77}
 
     """
-    st.code(code, language="python")
+    #st.code(code, language="python")
 
     st.write("Here are the results of the models trained on the BoW vectors:")
     st.write(bow_accuracy_df)
@@ -489,7 +489,7 @@ def sentiment_analysis_page():
         {'SVM': 0.54, 'Multinomial Naive Bayes': 0.73}
 
     """
-    st.code(code, language="python")
+    #st.code(code, language="python")
     st.write("Here are the results of the models trained on the TF-IDF vectors:")
     st.write(tfidf_accuracy_df)
 
@@ -545,7 +545,7 @@ def sentiment_analysis_page():
     Accuracy-score 0.77
     """
 
-    st.code(code, language="python")
+    #st.code(code, language="python")
         
     st.write("As you can see, the Bagging approach resulted in F1-Scores and Accuracy similar to the original SVM model. While Bagging can be effective in improving model performance, in this specific case, the initial SVM model already performed quite well, and the Bagging approach didn't lead to a significant enhancement.")
 
