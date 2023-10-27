@@ -117,7 +117,7 @@ def home_page():
 
 def data_analysis_page():
     #global combined_df
-    st.header("Data Analysis")
+    st.header("Data Evaluation")
     st.subheader("Combine and analyze Twitter and Facebook data")
 
     # Load CSV files directly into a DataFrame
@@ -129,24 +129,98 @@ def data_analysis_page():
     # Data Overview Section
     st.markdown("## Data Overview")
     st.write("Here's a sample of our Facebook data:")
+    code = """
+    combined_df.sample(5)
+    """
+    st.code(code,language='python')
+
     st.dataframe(combined_df.loc[205:210,:])
 
     st.write("Here's a sample of our Twitter data:")
+    code = """
+    combined_df.sample(5)
+    """
+    st.code(code,language='python')
     st.dataframe(combined_df.loc[3000:3005,:])
   # Sentiment Distribution Section
     # Sentiment Distribution Pie Chart
     st.subheader("Sentiment Distribution")
+
+    code ="""
     sentiment_counts = combined_df['sentiment'].value_counts()
-    fig = px.pie(sentiment_counts, values=sentiment_counts, names=sentiment_counts.index, title='Sentiment Distribution')
+    fig = px.pie(sentiment_counts, values=sentiment_counts, 
+                 names=sentiment_counts.index, title='Sentiment Distribution')
+
+    """
+    st.code(code,language="python")
+    sentiment_counts = combined_df['sentiment'].value_counts()
+    fig = px.pie(sentiment_counts, values=sentiment_counts, 
+                 names=sentiment_counts.index, title='Sentiment Distribution')
     st.plotly_chart(fig)
 
 
+    st.markdown("## Assessing Sentence Length")
+
+    code ="""
+
+        num_samples = len(combined_df)
+
+    # Handle missing values (NaN) in the 'full_text' column by filling them with empty strings
+    combined_df['full_text'].fillna('', inplace=True)
+
+    # Calculate average sentence length
+    combined_df['sentence_length'] = combined_df['full_text'].apply(lambda x: len(x.split()))
+    average_sentence_length = combined_df['sentence_length'].mean()
+
+
+
+        # Visualize data distribution using histograms or other plots
+    plt.figure(figsize=(10, 5))
+
+    # Plot a histogram of sentence lengths
+    plt.subplot(1, 2, 1)
+    sns.histplot(combined_df['sentence_length'], bins=20, kde=True)
+    plt.title('Sentence Length Distribution')
+    plt.xlabel('Sentence Length')
+    plt.ylabel('Frequency')
+    """
+
+    st.code(code,language="python")
+    #number of samples
+    num_samples = len(combined_df)
+
+    # Handle missing values (NaN) in the 'full_text' column by filling them with empty strings
+    combined_df['full_text'].fillna('', inplace=True)
+
+    # Calculate average sentence length
+    combined_df['sentence_length'] = combined_df['full_text'].apply(lambda x: len(x.split()))
+    average_sentence_length = combined_df['sentence_length'].mean()
+
+
+
+        # Visualize data distribution using histograms or other plots
+    plt.figure(figsize=(10, 5))
+
+    # Plot a histogram of sentence lengths
+    plt.subplot(1, 2, 1)
+    sns.histplot(combined_df['sentence_length'], bins=20, kde=True)
+    plt.title('Sentence Length Distribution')
+    plt.xlabel('Sentence Length')
+    plt.ylabel('Frequency')
+
+    # Display the plot in Streamlit
+    st.pyplot(plt)
 
     # Text Preprocessing Section
     st.markdown("## Text Preprocessing")
     # Find the number of tweets per day and plot it
 
+    code ="""
+    combined_df['tidy_text'] = np.vectorize(remove_pattern)(combined_df['full_text'], "@[\w]*")
 
+    """
+
+    st.code(code,language="python")
     # Remove Twitter handles (@user)
     combined_df['tidy_text'] = np.vectorize(remove_pattern)(combined_df['full_text'], "@[\w]*")
 
@@ -158,31 +232,60 @@ def data_analysis_page():
     
     # Step 2: Removing Special Characters, Numbers, Punctuations
     st.write("2. **Removing Special Characters, Numbers, Punctuations:** We eliminate special characters, numbers, and punctuation marks from the text. This helps in focusing on the actual words and their meaning.")
+    
+    code ="""
+    combined_df['tidy_text'] = combined_df['tidy_text'].str.replace("[^a-zA-Z#]", " ")
+
+    """
+
+    st.code(code,language="python")
     combined_df['tidy_text'] = combined_df['tidy_text'].str.replace("[^a-zA-Z#]", " ")
     st.write(combined_df[['full_text', 'tidy_text']].head())
 
     # Step 3: Removing Short Words
     st.write("3. **Removing Short Words:** Short words like 'a,' 'an,' 'the,' etc., don't usually provide much information. Removing them can make text analysis more meaningful.")
+    code ="""
+    combined_df['tidy_text'] = combined_df['tidy_text'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 1]))
+    """
 
+    st.code(code,language="python")
     combined_df['tidy_text'] = combined_df['tidy_text'].apply(lambda x: ' '.join([w for w in x.split() if len(w) > 1]))
     st.write(combined_df[['full_text', 'tidy_text']].head())
 
     
     # Step 4: Tokenization
     st.write("4. **Tokenization:** Tokenization involves splitting text into individual words or 'tokens.' It's a crucial step for many natural language processing tasks as it breaks down text into manageable units.")
+    code ="""
+    tokenized_tweet = combined_df['tidy_text'].apply(lambda x: x.split())
+    """
 
+    st.code(code,language="python")
     tokenized_tweet = combined_df['tidy_text'].apply(lambda x: x.split())
     st.write(tokenized_tweet.head())
 
     # Step 5: Stemming
     st.write("5. **Stemming:** Stemming is a text normalization technique that reduces words to their root form. For example, 'running' and 'ran' are stemmed to 'run.' This helps in treating similar words as the same for analysis.")
+    code ="""
+    stemmer = PorterStemmer()
+    tokenized_tweet = tokenized_tweet.apply(lambda x: [stemmer.stem(i) for i in x])
 
+    """
+
+    st.code(code,language="python")
     stemmer = PorterStemmer()
     tokenized_tweet = tokenized_tweet.apply(lambda x: [stemmer.stem(i) for i in x])
     st.write(tokenized_tweet.head())
 
     # Stitching tokens back together
     st.write("Stitching Tokens Back Together")
+    code ="""
+        for i in range(len(tokenized_tweet)):
+        tokenized_tweet[i] = ' '.join(tokenized_tweet[i])
+
+    combined_df['tidy_text'] = tokenized_tweet
+    """
+
+    st.code(code,language="python")
     for i in range(len(tokenized_tweet)):
         tokenized_tweet[i] = ' '.join(tokenized_tweet[i])
 
@@ -280,7 +383,7 @@ def sentiment_analysis_page():
     bow_f1_score_df = pd.read_csv('bow_f1_score_df.csv')
     tfidf_f1_score_df = pd.read_csv('tfidf_f1_score_df.csv')
 
-    st.header("Sentiment Analysis")
+    st.header("Model Development")
 
     st.markdown("### Bag-of-Words (BoW) and TF-IDF for Sentiment Analysis")
     st.write("In sentiment analysis, I use techniques like Bag-of-Words (BoW) and TF-IDF (Term Frequency-Inverse Document Frequency) for the following reasons:")
@@ -385,7 +488,7 @@ def sentiment_analysis_page():
         {'Mulitinomial Naive Bayes': 0.71, 'SVM': 0.77}
 
     """
-    #st.code(code, language="python")
+    st.code(code, language="python")
 
     st.write("Here are the results of the models trained on the BoW vectors:")
     st.write(bow_accuracy_df)
@@ -495,7 +598,7 @@ def sentiment_analysis_page():
         {'SVM': 0.54, 'Multinomial Naive Bayes': 0.73}
 
     """
-    #st.code(code, language="python")
+    st.code(code, language="python")
     st.write("Here are the results of the models trained on the TF-IDF vectors:")
     st.write(tfidf_accuracy_df)
 
@@ -551,7 +654,7 @@ def sentiment_analysis_page():
     Accuracy-score 0.77
     """
 
-    #st.code(code, language="python")
+    st.code(code, language="python")
         
     st.title("Why Stacking Helps Improve Predictions")
 
@@ -576,7 +679,35 @@ def sentiment_analysis_page():
     st.write("- Produces better predictions for our problem")
 
 
-    st.title("Try the Model")
+    st.title("Cross Validation for Stacking Ensemble")
+
+    code =("""
+            #cross validation
+        from sklearn.model_selection import cross_val_score
+        scores = cross_val_score(clf, x_train_bow, y_train_bow, cv=5)
+
+        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+        Accuracy: 0.78 (+/- 0.01)
+            """)
+
+    st.code(code,language='python')
+
+    # Your cross-validation results
+    mean_accuracy = 0.78
+    std_deviation = 0.01
+
+    # Explanation
+    st.write("Cross-validation is a technique that helps assess and improve the performance of a machine learning model.")
+    st.write("In our case, the model's accuracy was evaluated using cross-validation with 5 folds.")
+    st.write(f"The model achieved an average accuracy of {mean_accuracy:.2f}, which means it correctly predicted 78% of the instances on average.")
+    st.write(f"The standard deviation of {std_deviation:.2f} indicates how much the accuracy scores varied across different subsets of the data.")
+    st.write("A smaller standard deviation suggests more stable and consistent model performance, which is desirable.")
+    st.write("Cross-validation is essential for reducing overfitting, optimizing hyperparameters, and gaining confidence in your model's performance.")
+    
+    
+    st.title("Model Deployment -Try the Model")
+        ##st.title("Try the Model")
 
     st.write("Now that we've trained our model, let's try it out!")
 
@@ -663,8 +794,8 @@ def predict_sentiment(input_text):
 # Create a sidebar navigation
 app_pages = {
     "Home": home_page,
-    "Data Analysis": data_analysis_page,
-    "Modelling": sentiment_analysis_page,
+    "Data Evaluation": data_analysis_page,
+    "Model Development": sentiment_analysis_page,
     "Further Research": further_research,
 }
 
