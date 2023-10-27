@@ -706,6 +706,10 @@ def sentiment_analysis_page():
     st.write("Cross-validation is essential for reducing overfitting, optimizing hyperparameters, and gaining confidence in your model's performance.")
     
     
+    #scores
+    scores = pd.read_csv('scores.csv')
+    st.write("Here are the Cross Validation Scores:")
+    st.write(scores)
     st.title("Model Deployment -Try the Model")
         ##st.title("Try the Model")
 
